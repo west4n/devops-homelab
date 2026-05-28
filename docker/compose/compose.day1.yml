@@ -1,0 +1,63 @@
+name: devops-homelab-day1
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: homelab-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - homelab
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  comforto:
+    build:
+      context: ${APP_DIR}
+      dockerfile: Dockerfile
+    image: comforto:local
+    container_name: homelab-comforto
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      DATABASE_URL: ${DATABASE_URL}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - '${APP_PORT}:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - homelab
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'node -e "fetch(''http://127.0.0.1:3000/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+
+networks:
+  homelab:
+    driver: bridge

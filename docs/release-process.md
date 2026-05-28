@@ -57,3 +57,7 @@ nextjs-payload-app:v1.0.1
 ## Release owner
 
 For homelab purposes, the release owner is the repository maintainer.
+
+## Release validation
+
+Before creating a release tag, the maintainer should verify that documentation, Docker image version and deployment manifests use the same version.

@@ -1,0 +1,122 @@
+---
+- name: Wait for cloud-init to finish
+  ansible.builtin.command: cloud-init status --wait
+  register: base_os_cloud_init_status
+  changed_when: false
+  failed_when: base_os_cloud_init_status.rc not in [0, 2]
+
+- name: Show cloud-init status when recoverable errors exist
+  ansible.builtin.debug:
+    var: base_os_cloud_init_status.stdout_lines
+  when: base_os_cloud_init_status.rc == 2
+
+- name: Show detailed cloud-init status when recoverable errors exist
+  ansible.builtin.command: cloud-init status --long
+  register: base_os_cloud_init_status_long
+  changed_when: false
+  failed_when: false
+  when: base_os_cloud_init_status.rc == 2
+
+- name: Print detailed cloud-init status
+  ansible.builtin.debug:
+    var: base_os_cloud_init_status_long.stdout_lines
+  when: base_os_cloud_init_status.rc == 2
+
+- name: Update and cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Upgrade installed packages
+  ansible.builtin.apt:
+    upgrade: dist
+
+- name: Insatll base packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - wget
+      - gnupg
+      - lsb-release
+      - git
+      - vim
+      - htop
+      - unzip
+      - qemu-guest-agent
+      - ufw
+    state: present
+
+- name: Enable and start qemu guest agent
+  ansible.builtin.systemd:
+    name: qemu-guest-agent
+    enabled: true
+    state: started
+
+- name: Set server timezone to UTC
+  community.general.timezone:
+    name: UTC
+
+- name: Allow SSH through UFW
+  community.general.ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Set default incoming policy
+  community.general.ufw:
+    direction: incoming
+    policy: deny
+
+- name: Set default outgoing policy
+  community.general.ufw:
+    direction: outgoing
+    policy: allow
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+
+- name: Disable swap for Kubernetes compatibility
+  ansible.builtin.command: swapoff -a
+  changed_when: false
+
+- name: Remove swap entries from fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^\s*([^#]\S+)\s+\S+\s+swap\s+.*$'
+    replace: '# \1 swap disabled for Kubernetes'
+
+- name: Ensure kernel modules config for Kubernetes exists
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Load overlay module
+  community.general.modprobe:
+    name: overlay
+    state: present
+
+- name: Load br_netfilter module
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Configure sysctl for Kubernetes networking
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-kubernetes-cri.conf
+    content: |
+      net.bridge.bridge-nf-call-iptables = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.ipv4.ip_forward = 1
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Apply sysctl settings
+  ansible.builtin.command: sysctl --system
+  changed_when: false

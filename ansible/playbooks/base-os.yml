@@ -1,0 +1,13 @@
+---
+- name: Prepare Ubuntu VM base OS
+  hosts: homelab_vms
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Wait until SSH is available
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+  roles:
+    - base_os

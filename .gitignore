@@ -28,6 +28,8 @@ override.tf.json
 # Ansible
 *.retry
 ansible/.vault_pass
+ansible/inventory/*.ini
+!ansible/inventory/*.example.ini
 
 # Node / Next.js
 node_modules/

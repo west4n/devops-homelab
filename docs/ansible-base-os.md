@@ -35,3 +35,5 @@ The VM is considered ready when:
 - qemu-guest-agent is active
 - UFW is enabled
 - Kubernetes sysctl settings are applied
+
+QEMU Guest Agent requires both guest-side package/service and Proxmox-side agent channel. In Terraform this is configured with agent.enabled = true. After enabling the channel, VM reboot may be required before /dev/virtio-ports/org.qemu.guest_agent.0 appears.

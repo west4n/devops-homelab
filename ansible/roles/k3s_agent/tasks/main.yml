@@ -1,0 +1,23 @@
+---
+- name: Install K3s agent
+  ansible.builtin.command:
+    cmd: /usr/local/bin/k3s-install.sh
+  environment:
+    K3S_URL: "https://{{ hostvars[groups['k3s_control_plane'][0]].ansible_host }}:6443"
+    K3S_TOKEN: "{{ hostvars[groups['k3s_control_plane'][0]].k3s_server_node_token }}"
+    INSTALL_K3S_CHANNEL: stable
+    INSTALL_K3S_EXEC: >-
+      agent
+      --node-name {{ inventory_hostname }}
+      --node-ip {{ ansible_host }}
+  args:
+    creates: /etc/systemd/system/k3s-agent.service
+  changed_when: false
+  no_log: true
+
+- name: Enable and start K3s agent
+  ansible.builtin.systemd:
+    name: k3s-agent
+    enabled: true
+    state: started
+    daemon_reload: true

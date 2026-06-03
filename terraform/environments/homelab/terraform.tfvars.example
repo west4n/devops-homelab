@@ -1,0 +1,44 @@
+proxmox_endpoint = "https://YOUR_PROXMOX_IP:8006/"
+proxmox_api_token = "root@pam!terraform=YOUR_TOKEN_VALUE"
+proxmox_insecure = true
+
+proxmox_node_name = "pve"
+datastore_id = "local-lvm"
+network_bridge = "vmbr0"
+
+template_vmid = 9000
+
+vm_username = "devops"
+ssh_public_key_path = "/Users/$USER/.ssh/id_ed25519.pub"
+
+k3s_nodes = {
+  k3s-cp-01 = {
+    vm_id        = 9300
+    name         = "k3s-cp-01"
+    role         = "control-plane"
+    cores        = 2
+    memory_mb    = 2048
+    ipv4_address = "172.16.1.151/24"
+    ipv4_gateway = "172.16.1.1"
+  }
+
+  k3s-worker-01 = {
+    vm_id        = 9301
+    name         = "k3s-worker-01"
+    role         = "worker"
+    cores        = 2
+    memory_mb    = 2048
+    ipv4_address = "172.16.1.152/24"
+    ipv4_gateway = "172.16.1.1"
+  }
+
+  k3s-worker-02 = {
+    vm_id        = 9302
+    name         = "k3s-worker-02"
+    role         = "worker"
+    cores        = 2
+    memory_mb    = 2048
+    ipv4_address = "172.16.1.153/24"
+    ipv4_gateway = "172.16.1.1"
+  }
+}

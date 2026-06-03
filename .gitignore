@@ -44,3 +44,6 @@ logs/
 
 # Docker
 docker-data/
+
+# Local Kubernetes kubeconfig
+ansible/kubeconfig/

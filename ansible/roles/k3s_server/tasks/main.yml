@@ -10,7 +10,7 @@
       --node-ip {{ ansible_host }}
       --advertise-address {{ ansible_host }}
       --tls-san {{ ansible_host }}
-      --write-kubeconfig-mode 644
+      --write-kubeconfig-mode 600
   args:
     creates: /etc/systemd/system/k3s.service
   changed_when: false
@@ -21,6 +21,13 @@
     enabled: true
     state: started
     daemon_reload: true
+
+- name: Restrict K3s kubeconfig permissions
+  ansible.builtin.file:
+    path: /etc/rancher/k3s/k3s.yaml
+    owner: root
+    group: root
+    mode: '0600'
 
 - name: Wait for Kubernetes API server
   ansible.builtin.wait_for:

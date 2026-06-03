@@ -3,12 +3,14 @@
   ansible.builtin.hostname:
     name: '{{ inventory_hostname }}'
 
-- name: Ensure hostname resolves locally
-  ansible.builtin.lineinfile:
+- name: Ensure K3s node hostname resolve to cluster IPs
+  ansible.builtin.blockinfile:
     path: /etc/hosts
-    regexp: '^127\.0\.1\.1\s+'
-    line: '127.0.1.1 {{ inventory_hostname }}'
-    state: present
+    marker: '# {mark} ANSIBLE MANAGED K3S HOSTS'
+    block: |
+      {% for host in groups['k3s_cluster'] %}
+      {{ hostvars[host].ansible_host }} {{ host }}
+      {% endfor %}
 
 - name: Build K3s cluster node IP list
   ansible.builtin.set_fact:
